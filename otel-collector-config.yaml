@@ -4,18 +4,26 @@ receivers:
       grpc:
       http:
 
-exporters:
-  logging:
-    verbosity: detailed
-    sampling_initial: 1
-    sampling_thereafter: 1
-
 processors:
   batch:
+
+exporters:
+  otlphttp/betterstack:
+    endpoint: ${env:BETTERSTACK_ENDPOINT}
+    headers:
+      Authorization: "Bearer ${env:BETTERSTACK_TOKEN}"
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [logging]
+      exporters: [otlphttp/betterstack]
+    metrics/betterstack:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/betterstack]
+    logs/betterstack:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/betterstack]
