@@ -8,22 +8,49 @@ processors:
   batch:
 
 exporters:
+  debug:
+    verbosity: detailed
+
   otlphttp/betterstack:
     endpoint: ${env:BETTERSTACK_ENDPOINT}
     headers:
       Authorization: "Bearer ${env:BETTERSTACK_TOKEN}"
+    tls:
+      insecure: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 5s
+      max_elapsed_time: 30s
+    timeout: 10s
+
+  logging:
+    verbosity: detailed
+    sampling_initial: 1
+    sampling_thereafter: 1
+
+extensions:
+  # Add health check and zpages for debugging
+  health_check:
+  zpages:
+    endpoint: :55679
 
 service:
+  extensions: [health_check, zpages]
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/betterstack]
+      exporters: [otlphttp/betterstack, debug, logging]
     metrics/betterstack:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/betterstack]
+      exporters: [otlphttp/betterstack, logging]
     logs/betterstack:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/betterstack]
+      exporters: [otlphttp/betterstack, debug, logging]
+
+  telemetry:
+    logs:
+      level: debug
